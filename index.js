@@ -7,7 +7,7 @@ var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 var flash = require('connect-flash');
 var config = require('config-lite')(__dirname);
-var routes = require('./routes');
+var routes = require('./routes/index');
 var pkg = require('./package');
 
 var app = express();
@@ -34,6 +34,25 @@ app.use(session({
 }));
 // flash 中间件，用来显示通知
 app.use(flash());
+// 处理表单及文件上传的中间件
+app.use(require('express-formidable')({
+    uploadDir: path.join(__dirname, 'public/img'),// 上传文件目录
+    keepExtensions: true// 保留后缀
+}));
+
+// 设置模板全局常量
+app.locals.blog = {
+    title: pkg.name,
+    description: pkg.description
+};
+
+// 添加模板必需的三个变量
+app.use(function (req, res, next) {
+    res.locals.user = req.session.user;
+    res.locals.success = req.flash('success').toString();
+    res.locals.error = req.flash('error').toString();
+    next();
+});
 
 // 路由
 routes(app);
